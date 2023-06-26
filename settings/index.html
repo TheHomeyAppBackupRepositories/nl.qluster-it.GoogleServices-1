@@ -1,0 +1,205 @@
+<!doctype html>
+<html>
+    <head>
+        <style>
+            h2 {
+                margin-top:20px;
+                margin-bottom:3px;
+            }
+        </style>
+        <script type="text/javascript" src="/homey.js" data-origin="settings"></script>
+           
+        <script type="text/javascript"> 
+            var debug; 
+            var saveButton;// = document.getElementById('save');
+            var cloudJSON;// = document.getElementById('cloudJSON');
+            var defaultCloudVoice ;//= document.getElementById('defaultCloudVoice');
+            var cloudProject ;
+            var cloudApiKey;
+            var mapsApiKey;
+            function l(s)  {
+                if(!debug) debug = document.getElementById('debug');
+                if(debug) debug.value+='\r\n' + (s!==undefined && s!==null ? s.toString() : 'undefined');
+            }
+
+            
+            function save() {
+                //Homey.alert('Saving');
+                try {                        
+                    var promises = [];
+                    promises.push(Homey.set('CloudJSON', cloudJSON.value));
+                    promises.push(Homey.set('DefaultCloudVoice', defaultCloudVoice.selectedIndex>0 && defaultCloudVoice.children.length>defaultCloudVoice.selectedIndex ? defaultCloudVoice.children[defaultCloudVoice.selectedIndex].value : null));
+                    promises.push(Homey.set('CloudProject', cloudProject.value));
+                    promises.push(Homey.set('CloudApiKey', cloudApiKey.value));
+                    promises.push(Homey.set('MapsApiKey', mapsApiKey.value));
+                    // Promise.all(promises).then(x=> {
+                    //     getVoices();
+                    // }).catch(x=> {
+                    //     Homey.alert('Error while saving-catch: ' + x);
+                    // });
+                    setTimeout(function() {
+                        getVoices();
+                    }, 1000);
+                        Homey.alert('Saved');
+                    //await Homey.set('DefaultCloudLanguageCode', defaultCloudLanguageCode.children[defaultCloudLanguageCode.selectedIndex].value);                            
+
+                } catch (error) {
+                    Homey.alert('Error while saving: ' + error);
+                }
+            }
+                
+            function getVoices() {
+                // var list;
+                // var languages=[];
+                // var genders = [];
+
+                Homey.api( 'get', '/getVoices', function(err, result) {
+                    // list = result;
+                    
+                    // list.forEach(voice=> {
+                    //     if(genders.indexOf(voice.ssmlGender)==-1) genders.push(voice.ssmlGender) ;
+                    //     voice.languageCodes.forEach(lg=> { if(languages.indexOf(lg)==-1) languages.push(lg) ;});
+                    // });
+                    
+                    for (let i = 0; i < defaultCloudVoice.children.length; i++) {
+                        const element = defaultCloudVoice.children[i];
+                        defaultCloudVoice.removeChild(element);
+                        i--;                        
+                    } 
+                    
+                    // Homey.get('DefaultCloudLanguageCode', function(err, defaultLanguageCode) {
+                    //     try {
+                    //         if(!defaultLanguageCode) defaultLanguageCode = this.homey.__("languagecode") || 'en-GB';
+                    //         //Homey.alert('try: ' + result);
+                    //         for (let i = 0; i < languages.length; i++) {
+                    //             const languageCode = languages[i];
+                    //             var option = document.createElement('option');
+                    //             option.value = languageCode;
+                    //             option.innerText = languageCode;
+                    //             if(languageCode==defaultLanguageCode) option.selected = true;
+                    //             defaultCloudLanguageCode.appendChild(option);                            
+                    //         }
+                    //         //Homey.alert('try done');
+                            
+                    //     } catch (error) {
+                    //         Homey.alert('DefaultCloudLanguageCode.error: ' + error);                                
+                    //     }
+                    // });
+
+                    for (let i = 0; i < defaultCloudVoice.children.length; i++) {
+                        const element = defaultCloudVoice.children[i];
+                        defaultCloudVoice.removeChild(element);
+                        i--;                        
+                    }
+                    if(!err) Homey.get('DefaultCloudVoice', function(err, defaultVoice) {
+                        try {
+                            //if(!defaultVoice) return;
+                            defaultVoice = defaultVoice ? JSON.parse(defaultVoice) : null;
+                            if(result && result.length>0)for (let i = 0; i < result.length; i++) {
+                                const voice = result[i];
+                                var option = document.createElement('option');
+                                var val = JSON.stringify(voice);
+                                option.value = val;
+                                option.innerText = voice.name + ' (' + voice.ssmlGender + ')';
+                                if(defaultVoice && voice.name==defaultVoice.name) option.selected = true;
+                                defaultCloudVoice.appendChild(option);                            
+                            }
+                            
+                        } catch (error) {
+                            Homey.alert('DefaultCloudVoice.error: ' + error);                                
+                        }
+                    });
+                });
+            }
+                
+
+            function onHomeyReady(Homey) {
+                //Homey.alert('ready');
+                try {
+                    
+                    saveButton = document.getElementById('save');
+                    cloudJSON = document.getElementById('cloudJSON');
+                    defaultCloudVoice = document.getElementById('defaultCloudVoice');
+                    cloudProject = document.getElementById('cloudProject');
+                    cloudApiKey = document.getElementById('cloudApiKey');
+                    mapsApiKey = document.getElementById('mapsApiKey');
+                    //var defaultCloudLanguageCode = document.getElementById('defaultCloudLanguageCode');
+                    Homey.ready();
+                    // save.addEventListener('click', function (e) {
+                        
+                    // });
+                    Homey.get('CloudJSON', function(err, v) {
+                        cloudJSON.value = err ? '' : v;
+                    });
+                    Homey.get('CloudProject', function(err, v) {
+                        cloudProject.value = err ? '' : v;
+                    });
+                    Homey.get('CloudApiKey', function(err, v) {
+                        cloudApiKey.value = err ? '' : v;
+                    });
+                    Homey.get('MapsApiKey', function(err, v) {
+                        mapsApiKey.value = err ? '' : v;
+                    });
+                    getVoices();
+                } catch (e1) {                   
+                    Homey.alert('Error while loading: ' + e1);
+                }
+            }
+        </script>
+
+    </head>
+
+    <body>        
+            <!-- <textarea id="debug" type="text" columns="40" rows="5" style="width:100%;display: none;" ></textarea>
+            <br/>
+            <br/>
+         -->
+        <h2>Google Cloud Service Account JSON</h2>
+        <textarea id="cloudJSON" type="text" columns="40" rows="10" style="width:100%;" placeholder="example : {
+  'type': 'service_account',
+  'project_id': '',
+  'private_key_id': '',
+  'private_key': '-----BEGIN PRIVATE KEY-----\\n-----END PRIVATE KEY-----\n',
+  'client_email': '',
+  'client_id': '',
+  'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
+  'token_uri': 'https://oauth2.googleapis.com/token',
+  'auth_provider_x509_cert_url': 'https://www.googleapis.com/oauth2/v1/certs',
+  'client_x509_cert_url': ''
+}
+          "></textarea>
+        <br/>
+<!-- 
+        <h2>Google Cloud Default Language Code</h2>
+        <select id="defaultCloudLanguageCode" style="display: inline-block;width:100%;"></select>
+        <br/> -->
+
+        <h2>Google Cloud Default Voice</h2>
+        <select id="defaultCloudVoice" style="display: inline-block;width:100%;"></select>
+        <br/>
+
+        <h2>Google Cloud Project (for Translate)</h2>
+        <input type="text" id="cloudProject" style="display: inline-block;width:100%;" placeholder="ProjectID" />
+        <div style="display: inline-block;width:100%;">Enter the <strong>Project ID</strong>. Case Sensitive!</div>
+        <br/>
+        <br/><br/>
+
+        <h2>Google API Key (for YouTube)</h2>
+        <input type="text" id="cloudApiKey" style="display: inline-block;width:100%;" placeholder="API Key" />
+        <div style="display: inline-block;width:100%;">Enter the API Key.</div>
+        <br/>
+        <br/>
+
+        <h2>Google API Key (for Maps)</h2>
+        <input type="text" id="mapsApiKey" style="display: inline-block;width:100%;" placeholder="API Key" />
+        <div style="display: inline-block;width:100%;">Enter the API Key.</div>
+        <br/>
+        <br/>
+
+        <input type="button" id="save" onclick="save()" value="Save"/>
+
+</body>
+</html>
+
+
+     
