@@ -13,7 +13,7 @@ class GoogleTTSDriver extends Homey.Driver
     
     async onPairListDevices()
     {
-        return {
+        return [{
             "name": 'Google TTS device',
             data:
             {
@@ -23,7 +23,7 @@ class GoogleTTSDriver extends Homey.Driver
             {
                 "languagecode": this.homey.__('languagecode') || 'en-GB'
             }
-        };
+        }];
 
     }
 
